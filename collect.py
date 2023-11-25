@@ -1,10 +1,6 @@
 import streamlit as st
 import boto3
 
-# Access AWS credentials from Streamlit secrets
-AWS_ACCESS_KEY = st.secrets["AWS_ACCESS_KEY"]
-AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
-
 # Configure the boto3 client with the retrieved credentials
 s3 = boto3.client("s3", aws_access_key_id=st.secrets["AWS"]["aws_access_key_id"], aws_secret_access_key=st.secrets["AWS"]["aws_secret_access_key"])
 bucket_name = st.secrets["AWS"]["bucket_name"]
