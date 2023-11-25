@@ -6,15 +6,9 @@ AWS_ACCESS_KEY = st.secrets["AWS_ACCESS_KEY"]
 AWS_SECRET_ACCESS_KEY = st.secrets["AWS_SECRET_ACCESS_KEY"]
 
 # Configure the boto3 client with the retrieved credentials
-s3 = boto3.client(
-    's3',
-    AWS_ACCESS_KEY=AWS_ACCESS_KEY,
-    AWS_SECRET_ACCESS_KEY=AWS_SECRET_ACCESS_KEY
-)
-
-# AWS S3 Client Configuration
-s3 = boto3.client('s3')
-bucket_name = "your-bucket-name"
+s3 = boto3.client("s3", aws_access_key_id=st.secrets["AWS"]["aws_access_key_id"], aws_secret_access_key=st.secrets["AWS"]["aws_secret_access_key"])
+bucket_name = st.secrets["AWS"]["bucket_name"]
+object_key = st.secrets["AWS"]["object_key"]
 
 # Function to save collection to S3
 def save_collection_to_s3(user_id, collection_data):
