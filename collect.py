@@ -10,12 +10,10 @@ s3 = boto3.client(
 )
 bucket_name = st.secrets["AWS"]["bucket_name"]
 
-# Function to save collection to S3
 def save_collection_to_s3(user_id, collection_data):
     file_name = f"{user_id}_collection.json"
     s3.put_object(Bucket=bucket_name, Key=file_name, Body=json.dumps(collection_data))
 
-# Function to load collection from S3
 def load_collection_from_s3(user_id):
     file_name = f"{user_id}_collection.json"
     try:
@@ -44,47 +42,55 @@ elif node_type == "Image":
     node_image = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
 add_node_button = st.button("Add Node")
+
+if add_node_button:
+    new_node = {"id": len(user_collection) + 1, "type": node_type, "name": node_name, "topic": node_topic}
+    if node_type == "URL":
+        new_node["content"] = node_url
+    elif node_type == "Video":
+        new_node["content"] = node_video
+    elif node_type == "File" and node_file:
+        file_key = f"{node_name}-{node_file.name}"
+        s3.upload_fileobj(node_file, bucket_name, file_key)
+        new_node["content"] = file_key
+        st.success(f"File {node_file.name} uploaded successfully!")
+    elif node_type == "Image" and node_image:
+        image_key = f"{node_name}-{node_image.name}"
+        s3.upload_fileobj(node_image, bucket_name, image_key)
+        new_node["content"] = image_key
+        st.success(f"Image {node_image.name} uploaded successfully!")
+    user_collection.append(new_node)
+    save_collection_to_s3(user_id, user_collection)
+
 st.header("Node Visualization")
 
-d3_html = """
+# Prepare the node data in Python
+node_data = json.dumps(user_collection)
+
+# Embed the node data into the D3.js code
+d3_html = f"""
 <div id='d3-container'></div>
 <script src='https://d3js.org/d3.v7.min.js'></script>
 <script>
-const data = [];
-function updateVisualization() {
+const data = {node_data};
+function updateVisualization() {{
+    d3.select('#d3-container').selectAll('*').remove();
     const svg = d3.select('#d3-container').append('svg').attr('width', 800).attr('height', 600);
     const nodes = svg.selectAll('circle').data(data, d => d.id);
     nodes.enter().append('circle').attr('cx', d => d.x).attr('cy', d => d.y).attr('r', 20).style('fill', d => getNodeColor(d.type));
     nodes.exit().remove();
-    nodes.on('click', d => { alert('Node Clicked: ' + d.content); });
-}
-function getNodeColor(type) {
-    switch (type) {
+    nodes.on('click', d => {{ alert('Node Clicked: ' + d.content); }});
+}}
+function getNodeColor(type) {{
+    switch (type) {{
         case 'URL': return 'blue';
         case 'Video': return 'green';
         case 'File': return 'orange';
         case 'Image': return 'red';
         default: return 'gray';
-    }
-}
+    }}
+}}
 updateVisualization();
 </script>
 """
 st.markdown(d3_html, unsafe_allow_html=True)
-
-if add_node_button:
-    if node_type == "URL":
-        user_collection.append({"id": len(user_collection) + 1, "x": 100, "y": 100, "type": "URL", "content": node_url})
-    elif node_type == "Video":
-        user_collection.append({"id": len(user_collection) + 1, "x": 200, "y": 200, "type": "Video", "content": node_video})
-    elif node_type == "File" and node_file:
-        file_key = f"{node_name}-{node_file.name}"
-        s3.upload_fileobj(node_file, bucket_name, file_key)
-        user_collection.append({"id": len(user_collection) + 1, "x": 300, "y": 300, "type": "File", "content": file_key})
-        st.success(f"File {node_file.name} uploaded successfully!")
-    elif node_type == "Image" and node_image:
-        image_key = f"{node_name}-{node_image.name}"
-        s3.upload_fileobj(node_image, bucket_name, image_key)
-        user_collection.append({"id": len(user_collection) + 1, "x": 400, "y": 400, "type": "Image", "content": image_key})
-        st.success(f"Image {node_image.name} uploaded successfully!")
-    save_collection_to_s3(user_id, user_collection)
