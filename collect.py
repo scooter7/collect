@@ -3,7 +3,6 @@ import boto3
 import json
 import random
 
-# Configure the boto3 client with the retrieved credentials
 s3 = boto3.client(
     "s3",
     aws_access_key_id=st.secrets["AWS"]["aws_access_key_id"],
@@ -43,6 +42,7 @@ elif node_type == "Image":
     node_image = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
 add_node_button = st.button("Add Node")
+d3_placeholder = st.empty()
 
 if add_node_button:
     new_node = {"id": len(user_collection) + 1, "type": node_type, "name": node_name, "topic": node_topic, "x": random.randint(50, 750), "y": random.randint(50, 550)}
@@ -63,36 +63,30 @@ if add_node_button:
     user_collection.append(new_node)
     save_collection_to_s3(user_id, user_collection)
 
-st.header("Node Visualization")
-
-# Prepare the node data in Python
-node_data = json.dumps(user_collection)
-
-# Embed the node data into the D3.js code
-markdown_key = f"graph-{len(user_collection)}"
-d3_html = f"""
-<div id='d3-container'></div>
-<script src='https://d3js.org/d3.v7.min.js'></script>
-<script>
-const data = {node_data};
-function updateVisualization() {{
-    d3.select('#d3-container').selectAll('*').remove();
-    const svg = d3.select('#d3-container').append('svg').attr('width', 800).attr('height', 600);
-    const nodes = svg.selectAll('circle').data(data, d => d.id);
-    nodes.enter().append('circle').attr('cx', d => d.x).attr('cy', d => d.y).attr('r', 20).style('fill', d => getNodeColor(d.type));
-    nodes.exit().remove();
-    nodes.on('click', d => {{ alert('Node Clicked: ' + d.content); }});
-}}
-function getNodeColor(type) {{
-    switch (type) {{
-        case 'URL': return 'blue';
-        case 'Video': return 'green';
-        case 'File': return 'orange';
-        case 'Image': return 'red';
-        default: return 'gray';
+    node_data = json.dumps(user_collection)
+    d3_html = f"""
+    <div id='d3-container'></div>
+    <script src='https://d3js.org/d3.v7.min.js'></script>
+    <script>
+    const data = {node_data};
+    function updateVisualization() {{
+        d3.select('#d3-container').selectAll('*').remove();
+        const svg = d3.select('#d3-container').append('svg').attr('width', 800).attr('height', 600);
+        const nodes = svg.selectAll('circle').data(data, d => d.id);
+        nodes.enter().append('circle').attr('cx', d => d.x).attr('cy', d => d.y).attr('r', 20).style('fill', d => getNodeColor(d.type));
+        nodes.exit().remove();
+        nodes.on('click', d => {{ alert('Node Clicked: ' + d.content); }});
     }}
-}}
-updateVisualization();
-</script>
-"""
-st.markdown(d3_html, unsafe_allow_html=True, key=markdown_key)
+    function getNodeColor(type) {{
+        switch (type) {{
+            case 'URL': return 'blue';
+            case 'Video': return 'green';
+            case 'File': return 'orange';
+            case 'Image': return 'red';
+            default: return 'gray';
+        }}
+    }}
+    updateVisualization();
+    </script>
+    """
+    d3_placeholder.markdown(d3_html, unsafe_allow_html=True)
