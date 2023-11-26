@@ -88,4 +88,3 @@ if add_node_button:
         user_collection.append({"id": len(user_collection) + 1, "x": 400, "y": 400, "type": "Image", "content": image_key})
         st.success(f"Image {node_image.name} uploaded successfully!")
     save_collection_to_s3(user_id, user_collection)
-    updateVisualization()
