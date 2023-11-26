@@ -1,10 +1,14 @@
 import streamlit as st
 import boto3
+import json
 
 # Configure the boto3 client with the retrieved credentials
-s3 = boto3.client("s3", aws_access_key_id=st.secrets["AWS"]["aws_access_key_id"], aws_secret_access_key=st.secrets["AWS"]["aws_secret_access_key"])
+s3 = boto3.client(
+    "s3",
+    aws_access_key_id=st.secrets["AWS"]["aws_access_key_id"],
+    aws_secret_access_key=st.secrets["AWS"]["aws_secret_access_key"]
+)
 bucket_name = st.secrets["AWS"]["bucket_name"]
-object_key = st.secrets["AWS"]["object_key"]
 
 # Function to save collection to S3
 def save_collection_to_s3(user_id, collection_data):
@@ -21,11 +25,9 @@ def load_collection_from_s3(user_id):
         return []
 
 user_id = "user@example.com"
-
 user_collection = load_collection_from_s3(user_id)
 
 st.title("URL and File Node Visualization")
-
 st.header("Add Nodes")
 
 node_type = st.selectbox("Node Type", ["URL", "Video", "File", "Image"])
@@ -42,34 +44,33 @@ elif node_type == "Image":
     node_image = st.file_uploader("Upload Image", type=["jpg", "png", "jpeg"])
 
 add_node_button = st.button("Add Node")
-
 st.header("Node Visualization")
 
 d3_html = """
-<div id="d3-container"></div>
-<script src="https://d3js.org/d3.v7.min.js"></script>
+<div id='d3-container'></div>
+<script src='https://d3js.org/d3.v7.min.js'></script>
 <script>
 const data = [];
 function updateVisualization() {
-    const svg = d3.select("#d3-container").append("svg").attr("width", 800).attr("height", 600);
-    const nodes = svg.selectAll("circle").data(data, d => d.id);
-    nodes.enter().append("circle").attr("cx", d => d.x).attr("cy", d => d.y).attr("r", 20).style("fill", d => getNodeColor(d.type));
+    const svg = d3.select('#d3-container').append('svg').attr('width', 800).attr('height', 600);
+    const nodes = svg.selectAll('circle').data(data, d => d.id);
+    nodes.enter().append('circle').attr('cx', d => d.x).attr('cy', d => d.y).attr('r', 20).style('fill', d => getNodeColor(d.type));
     nodes.exit().remove();
-    nodes.on("click", d => { alert("Node Clicked: " + d.content); });
+    nodes.on('click', d => { alert('Node Clicked: ' + d.content); });
 }
 function getNodeColor(type) {
     switch (type) {
-        case "URL": return "blue";
-        case "Video": return "green";
-        case "File": return "orange";
-        case "Image": return "red";
-        default: return "gray";
+        case 'URL': return 'blue';
+        case 'Video': return 'green';
+        case 'File': return 'orange';
+        case 'Image': return 'red';
+        default: return 'gray';
     }
 }
 updateVisualization();
 </script>
 """
-components.html(d3_html, height=600)
+st.markdown(d3_html, unsafe_allow_html=True)
 
 if add_node_button:
     if node_type == "URL":
