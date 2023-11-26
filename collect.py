@@ -1,6 +1,7 @@
 import streamlit as st
 import boto3
 import json
+import random
 
 # Configure the boto3 client with the retrieved credentials
 s3 = boto3.client(
@@ -44,7 +45,7 @@ elif node_type == "Image":
 add_node_button = st.button("Add Node")
 
 if add_node_button:
-    new_node = {"id": len(user_collection) + 1, "type": node_type, "name": node_name, "topic": node_topic}
+    new_node = {"id": len(user_collection) + 1, "type": node_type, "name": node_name, "topic": node_topic, "x": random.randint(50, 750), "y": random.randint(50, 550)}
     if node_type == "URL":
         new_node["content"] = node_url
     elif node_type == "Video":
@@ -68,6 +69,7 @@ st.header("Node Visualization")
 node_data = json.dumps(user_collection)
 
 # Embed the node data into the D3.js code
+markdown_key = f"graph-{len(user_collection)}"
 d3_html = f"""
 <div id='d3-container'></div>
 <script src='https://d3js.org/d3.v7.min.js'></script>
@@ -93,4 +95,4 @@ function getNodeColor(type) {{
 updateVisualization();
 </script>
 """
-st.markdown(d3_html, unsafe_allow_html=True)
+st.markdown(d3_html, unsafe_allow_html=True, key=markdown_key)
